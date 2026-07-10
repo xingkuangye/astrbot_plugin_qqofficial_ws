@@ -171,10 +171,13 @@ class QQOfficialWSMessageEvent(AstrMessageEvent):
     async def _post_send(self, stream: dict | None = None):
         if not self.send_buffer:
             return None
+        keyboard = getattr(self.send_buffer, "keyboard", None)
         message_chains = self._split_message_chain_by_media(self.send_buffer)
         stream_for_chain = stream if len(message_chains) == 1 else None
         ret = None
-        for mc in message_chains:
+        for i, mc in enumerate(message_chains):
+            if keyboard is not None and i == 0:
+                mc.keyboard = keyboard
             ret = await self._post_send_one(mc, stream_for_chain)
         self.send_buffer = None
         return ret
