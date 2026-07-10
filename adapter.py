@@ -164,11 +164,14 @@ def _ensure_interaction_parsers() -> None:
     """Register parser for INTERACTION_CREATE events."""
 
     def _parse_interaction(self, payload: dict[str, Any]) -> None:
+        # Always dispatch raw payload; on_interaction_create handles extraction
         self._dispatch("interaction_create", payload)
 
-    if not hasattr(ConnectionState, "parse_interaction_create"):
-        setattr(ConnectionState, "parse_interaction_create", _parse_interaction)
-        ConnectionState.parsers["interaction_create"] = _parse_interaction
+    # Force override: setattr on the class so ConnectionState.__init__
+    # picks it up via inspect.getmembers (scanning parse_* methods).
+    # ConnectionState.parsers is an instance dict rebuilt per session,
+    # so do NOT write to it at class level.
+    setattr(ConnectionState, "parse_interaction_create", _parse_interaction)
 # -------- Managed WebSocket --------
 
 class ManagedBotWebSocket(BotWebSocket):
@@ -316,8 +319,17 @@ class BotClient(Client):
         else:
             _bid = data_obj.get("button_id", data_obj.get("buttonId", ""))
             _bdata = data_obj.get("button_data", data_obj.get("buttonData", ""))
+        interaction_id = str(d.get("id", ""))
+
+        # Immediately ack the interaction to prevent QQ button timeout.
+        # QQ expects a PUT /interactions/{id} callback; without it shows 超时.
+        try:
+            await self.api.on_interaction_result(interaction_id, code=0)
+        except Exception:
+            logger.debug("[QQOfficialWS] interaction ack failed (non-fatal)", exc_info=True)
+
         click = KeyboardButtonClick(
-            interaction_id=str(d.get("id", "")),
+            interaction_id=interaction_id,
             button_id=str(_bid),
             button_data=str(_bdata),
             user_openid=str(d.get("user_openid", "")),
