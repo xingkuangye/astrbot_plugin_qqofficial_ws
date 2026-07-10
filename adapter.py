@@ -460,10 +460,7 @@ class QQOfficialWSAdapter(Platform):
             public_guild_messages=True,
             direct_message=guild_dm,
         )
-        try:
-            self.intents._value = intent_bits
-        except Exception:
-            pass
+        self.intents.value = intent_bits
 
         self.client = BotClient(intents=self.intents, bot_log=False, timeout=20)
         self.client.set_platform(self)
