@@ -1,0 +1,5 @@
+name: QQ 官方机器人 WS 适配器（插件版）
+version: 1.0.0
+author: astrbot
+desc: QQ 官方机器人 WebSocket 适配器，支持群成员进出事件和消息按钮交互
+repo: https://github.com/user/astrbot_plugin_qqofficial_ws
