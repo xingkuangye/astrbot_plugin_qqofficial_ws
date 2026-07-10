@@ -119,18 +119,12 @@ def _ensure_group_member_parsers() -> None:
             "parse_group_member_add",
             _make_parser("group_member_add", GroupEventType.MEMBER_ADD),
         )
-        ConnectionState.parsers["group_member_add"] = getattr(
-            ConnectionState, "parse_group_member_add"
-        )
 
     if not hasattr(ConnectionState, "parse_group_member_remove"):
         setattr(
             ConnectionState,
             "parse_group_member_remove",
             _make_parser("group_member_remove", GroupEventType.MEMBER_REMOVE),
-        )
-        ConnectionState.parsers["group_member_remove"] = getattr(
-            ConnectionState, "parse_group_member_remove"
         )
 
 
@@ -158,9 +152,6 @@ def _ensure_message_parsers() -> None:
                 ConnectionState,
                 f"parse_{parser_name}",
                 _build_parser(event_name, message_cls),
-            )
-            ConnectionState.parsers[parser_name] = getattr(
-                ConnectionState, f"parse_{parser_name}"
             )
 
 
