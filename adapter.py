@@ -155,6 +155,20 @@ def _ensure_message_parsers() -> None:
             )
 
 
+
+
+
+# -------- Extend ConnectionState for interaction events --------
+
+def _ensure_interaction_parsers() -> None:
+    """Register parser for INTERACTION_CREATE events."""
+
+    def _parse_interaction(self, payload: dict[str, Any]) -> None:
+        self._dispatch("interaction_create", payload)
+
+    if not hasattr(ConnectionState, "parse_interaction_create"):
+        setattr(ConnectionState, "parse_interaction_create", _parse_interaction)
+        ConnectionState.parsers["interaction_create"] = _parse_interaction
 # -------- Managed WebSocket --------
 
 class ManagedBotWebSocket(BotWebSocket):
@@ -436,6 +450,7 @@ class QQOfficialWSAdapter(Platform):
         _ensure_message_parsers()
         if self._enable_group_member_events:
             _ensure_group_member_parsers()
+        _ensure_interaction_parsers()
 
         self._session_last_message_id: dict[str, str] = {}
         self._session_scene: dict[str, str] = {}
