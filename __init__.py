@@ -16,8 +16,8 @@ class QQOfficialWSPlugin(Star):
         # 导入触发适配器注册
         from .adapter import QQOfficialWSAdapter  # noqa: F401
 
-    async def on_loaded(self):
-        logger.info("[QQOfficialWS] 插件已加载 — QQ 官方机器人 WS 适配器（插件版）")
+    async def initialize(self) -> None:
+        logger.info("[QQOfficialWS] 插件已激活 — QQ 官方机器人 WS 适配器（插件版）")
 
-    async def on_unloaded(self):
-        logger.info("[QQOfficialWS] 插件已卸载")
+    async def terminate(self) -> None:
+        logger.info("[QQOfficialWS] 插件已停用")
