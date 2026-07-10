@@ -161,17 +161,17 @@ def _ensure_message_parsers() -> None:
 # -------- Extend ConnectionState for interaction events --------
 
 def _ensure_interaction_parsers() -> None:
-    """Register parser for INTERACTION_CREATE events."""
+    """Register parser for INTERACTION_CREATE events.
 
-    def _parse_interaction(self, payload: dict[str, Any]) -> None:
-        # Always dispatch raw payload; on_interaction_create handles extraction
+    botpy already has parse_interaction_create built in, but it dispatches an
+    Interaction object. We override to dispatch the raw dict payload so our
+    handler can extract data uniformly.
+    """
+
+    def parse_interaction_create(self, payload: dict[str, Any]) -> None:
         self._dispatch("interaction_create", payload)
 
-    # Force override: setattr on the class so ConnectionState.__init__
-    # picks it up via inspect.getmembers (scanning parse_* methods).
-    # ConnectionState.parsers is an instance dict rebuilt per session,
-    # so do NOT write to it at class level.
-    setattr(ConnectionState, "parse_interaction_create", _parse_interaction)
+    setattr(ConnectionState, "parse_interaction_create", parse_interaction_create)
 # -------- Managed WebSocket --------
 
 class ManagedBotWebSocket(BotWebSocket):
@@ -301,11 +301,20 @@ class BotClient(Client):
 
     async def on_interaction_create(self, payload: dict[str, Any]) -> None:
         """处理按钮点击回调 (INTERACTION_CREATE)。"""
-        d = payload.get("d", payload) if isinstance(payload, dict) else {}
+        logger.info("[QQOfficialWS] on_interaction_create triggered")
+
+        # botpy's built-in parser dispatches an Interaction object,
+        # our override dispatches the raw dict. Normalize both.
+        if hasattr(payload, "__dict__") and not isinstance(payload, dict):
+            d = getattr(payload, "__dict__", payload)
+        else:
+            d = payload.get("d", payload) if isinstance(payload, dict) else {}
+
         interaction_type = d.get("type") or d.get("interaction_type", 0)
 
         # INLINE_KEYBOARD = 11
         if int(interaction_type) != 11:
+            logger.debug(f"[QQOfficialWS] 忽略非按钮交互 type={interaction_type}")
             return
 
         data_obj = d.get("data", {}) or {}
@@ -326,7 +335,7 @@ class BotClient(Client):
         try:
             await self.api.on_interaction_result(interaction_id, code=0)
         except Exception:
-            logger.debug("[QQOfficialWS] interaction ack failed (non-fatal)", exc_info=True)
+            logger.warning("[QQOfficialWS] interaction ack failed", exc_info=True)
 
         click = KeyboardButtonClick(
             interaction_id=interaction_id,
