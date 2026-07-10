@@ -417,6 +417,7 @@ class QQOfficialWSAdapter(Platform):
         if guild_dm:
             intent_bits |= 1 << 12  # 频道私信
         intent_bits |= 1 << 0  # 频道（需要 GUILD 权限以接收频道消息）
+        intent_bits |= 1 << 26  # 按钮交互回调 (INTERACTION_CREATE)
 
         # Use botpy Intents, but override via _intents_raw for custom bitmask
         self.intents = botpy.Intents(
